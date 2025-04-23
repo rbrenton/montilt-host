@@ -2,22 +2,6 @@
 
 MonTilt is a Windows application that automatically rotates monitor orientation based on physical sensor data from ESP32 devices running the [MonTilt Sensor](https://github.com/rbrenton/montilt-sensor) firmware.
 
-## New Architecture
-
-The application has been refactored into a more modular architecture with three main components:
-
-1. **MonTilt.Driver**: Windows API interface for monitor orientation control
-2. **MonTilt.Core**: Device management and configuration 
-3. **MonTilt.CLI**: Command-line interface for configuration and monitoring
-
-## Features
-
-- **Monitor Control**: Rotate monitor displays using Windows API
-- **Device Management**: Auto-detect and connect to ESP32 devices
-- **Configuration**: Save and load device-to-monitor mappings
-- **CLI Interface**: Simple command-line interface for management
-- **Logging**: Detailed logging with multiple levels for debugging
-
 ## Requirements
 
 - Windows 10 or later
@@ -44,6 +28,9 @@ exit                     - Exit the application
 1. Open the solution in Visual Studio 2022 or later
 2. Ensure you have the .NET 6.0 SDK installed
 3. Build the solution
+```
+dotnet build
+```
 
 ## How It Works
 
