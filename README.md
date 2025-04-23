@@ -1,45 +1,56 @@
-# MonTilt Host
+# MonTilt
 
-MonTilt Host is a Windows application that automatically rotates monitor orientation based on physical sensor data from ESP32 devices. This is the main component of the MonTilt system, which consists of this host application and the [MonTilt Sensor](https://github.com/rbrenton/montilt-sensor) firmware.
+MonTilt is a Windows application that automatically rotates monitor orientation based on physical sensor data from ESP32 devices running the [MonTilt Sensor](https://github.com/rbrenton/montilt-sensor) firmware.
+
+## New Architecture
+
+The application has been refactored into a more modular architecture with three main components:
+
+1. **MonTilt.Driver**: Windows API interface for monitor orientation control
+2. **MonTilt.Core**: Device management and configuration 
+3. **MonTilt.CLI**: Command-line interface for configuration and monitoring
 
 ## Features
 
-- Automatically detects and connects to ESP32 devices running MonTilt Sensor firmware
-- Maps specific ESP32 sensors to specific monitors by MAC address
-- Rotates monitor displays based on real-time orientation data from sensors
-- Supports landscape (0°), portrait (90°), inverted landscape (180°), and inverted portrait (270°) orientations
-- Persists configuration between sessions
-- Simple command-line interface for management
+- **Monitor Control**: Rotate monitor displays using Windows API
+- **Device Management**: Auto-detect and connect to ESP32 devices
+- **Configuration**: Save and load device-to-monitor mappings
+- **CLI Interface**: Simple command-line interface for management
+- **Logging**: Detailed logging with multiple levels for debugging
 
 ## Requirements
 
 - Windows 10 or later
-- .NET 5.0 or later
+- .NET 6.0 or later
 - One or more ESP32 devices running [MonTilt Sensor](https://github.com/rbrenton/montilt-sensor) firmware
 
-## Usage
-
-1. Connect ESP32 devices with MonTilt Sensor firmware to USB ports
-2. Launch the application
-3. Use the following commands:
-   - `map [mac address] [monitor number]` - Map a device to a specific monitor
-   - `list` - List current device mappings
-   - `scan` - Rescan for new ESP32 devices
-   - `save` - Save current configuration
-   - `exit` - Exit the application
-
-## How It Works
-
-The application:
-1. Scans for ESP32 devices connected via USB
-2. Identifies them by MAC address
-3. Allows mapping each device to a specific monitor
-4. Receives orientation data from the sensors
-5. Rotates the corresponding monitors accordingly
+## CLI Commands
+```
+MonTilt Commands:
+help                     - Show this help text
+list monitors            - List available monitors
+list devices             - List connected devices
+list mappings            - List device-to-monitor mappings
+map <mac> <monitor>      - Map a device to a monitor
+unmap <mac>              - Remove a device mapping
+scan                     - Scan for new devices
+save                     - Save current configuration
+log <level>              - Set log level (debug, info, warning, error)
+exit                     - Exit the application
+```
 
 ## Building
 
-Open the solution in Visual Studio and build.
+1. Open the solution in Visual Studio 2022 or later
+2. Ensure you have the .NET 6.0 SDK installed
+3. Build the solution
+
+## How It Works
+
+1. The application scans for ESP32 devices connected via USB
+2. It identifies them by MAC address and maintains device-to-monitor mappings
+3. When orientation changes are detected from the sensors, it rotates the corresponding monitors using the Windows API
+4. Configuration is persisted between sessions
 
 ## Related Projects
 
