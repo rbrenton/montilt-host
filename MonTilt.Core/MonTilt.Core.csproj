@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
+    <ProjectReference Include="..\MonTilt.Driver\MonTilt.Driver.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MonTilt.Driver\MonTilt.Driver.csproj" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

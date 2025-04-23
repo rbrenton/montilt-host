@@ -1,25 +1,36 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Ports;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using MonTilt.Driver;
-
 namespace MonTilt.Core
 {
     /// <summary>
-    /// Status of a mapping between a device and a monitor
+    /// Represents the mapping status of a device to a monitor
     /// </summary>
     public class MappingStatus
     {
-        public string DeviceMac { get; set; }
-        public string MonitorDeviceName { get; set; }
-        public bool IsConnected { get; set; }
-        public DateTime LastUpdated { get; set; }
-        public Orientation CurrentOrientation { get; set; }
+        /// <summary>
+        /// Gets the MAC address of the device
+        /// </summary>
+        public string MacAddress { get; }
+        
+        /// <summary>
+        /// Gets the monitor index
+        /// </summary>
+        public int MonitorIndex { get; }
+        
+        /// <summary>
+        /// Gets whether the mapping is valid
+        /// </summary>
+        public bool IsValid { get; }
+        
+        /// <summary>
+        /// Constructor for MappingStatus
+        /// </summary>
+        /// <param name="macAddress">The MAC address of the device</param>
+        /// <param name="monitorIndex">The monitor index</param>
+        /// <param name="isValid">Whether the mapping is valid</param>
+        public MappingStatus(string macAddress, int monitorIndex, bool isValid)
+        {
+            MacAddress = macAddress;
+            MonitorIndex = monitorIndex;
+            IsValid = isValid;
+        }
     }
 }

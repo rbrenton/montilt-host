@@ -2,147 +2,168 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MonTilt.Core
 {
     /// <summary>
-    /// Manages configuration and device-to-monitor mappings
+    /// Manages configuration settings for the MonTilt application
     /// </summary>
     public class ConfigManager
     {
-        // Constants
-        private const string DEFAULT_CONFIG_FILE = "montilt_config.json";
-        
-        // Properties
-        public string ConfigFilePath { get; private set; }
-        
-        // Configuration data
-        private ConfigData _config;
-        
+        // Configuration file path
+        private const string CONFIG_FILE = "montilt_config.json";
+
         /// <summary>
-        /// Constructor
+        /// Dictionary mapping device MAC addresses to monitor indices
         /// </summary>
-        public ConfigManager(string configFilePath = null)
+        public Dictionary<string, int> DeviceMonitorMap { get; private set; } = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Dictionary mapping device MAC addresses to COM ports
+        /// </summary>
+        public Dictionary<string, string> DevicePortMap { get; private set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Event raised when configuration is updated
+        /// </summary>
+        public event EventHandler? ConfigurationUpdated;
+
+        /// <summary>
+        /// Constructor for ConfigManager
+        /// </summary>
+        public ConfigManager()
         {
-            ConfigFilePath = configFilePath ?? DEFAULT_CONFIG_FILE;
-            _config = new ConfigData();
+            // Initialize empty maps
+            DeviceMonitorMap = new Dictionary<string, int>();
+            DevicePortMap = new Dictionary<string, string>();
         }
-        
+
         /// <summary>
-        /// Load configuration from file
+        /// Loads configuration from file or creates default configuration if file doesn't exist
         /// </summary>
-        public bool LoadConfig()
+        /// <returns>True if configuration was loaded successfully, false otherwise</returns>
+        public bool LoadConfiguration()
         {
             try
             {
-                if (File.Exists(ConfigFilePath))
+                if (File.Exists(CONFIG_FILE))
                 {
-                    string json = File.ReadAllText(ConfigFilePath);
-                    var loadedConfig = JsonSerializer.Deserialize<ConfigData>(json);
-                    
-                    if (loadedConfig != null)
+                    string json = File.ReadAllText(CONFIG_FILE);
+                    MonTiltConfig? config = JsonSerializer.Deserialize<MonTiltConfig>(json);
+
+                    if (config != null)
                     {
-                        _config = loadedConfig;
-                        
-                        // Initialize collections if they don't exist
-                        _config.DeviceToMonitorMap ??= new Dictionary<string, string>();
-                        _config.DeviceToPortMap ??= new Dictionary<string, string>();
-                        
+                        // Initialize from loaded config
+                        DeviceMonitorMap = config.DeviceMonitorMap ?? new Dictionary<string, int>();
+                        DevicePortMap = config.DevicePortMap ?? new Dictionary<string, string>();
+
+                        Console.WriteLine("Configuration loaded successfully.");
                         return true;
                     }
                 }
+
+                // Create default configuration if file doesn't exist or deserialization failed
+                Console.WriteLine("Using default configuration.");
+                CreateDefaultConfiguration();
+                return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Use default config if loading fails
-                _config = new ConfigData
-                {
-                    DeviceToMonitorMap = new Dictionary<string, string>(),
-                    DeviceToPortMap = new Dictionary<string, string>()
-                };
-            }
-            
-            return false;
-        }
-        
-        /// <summary>
-        /// Save configuration to file
-        /// </summary>
-        public bool SaveConfig()
-        {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                
-                string json = JsonSerializer.Serialize(_config, options);
-                File.WriteAllText(ConfigFilePath, json);
-                
-                return true;
-            }
-            catch
-            {
+                Console.WriteLine($"Error loading configuration: {ex.Message}");
+                CreateDefaultConfiguration();
                 return false;
             }
         }
-        
+
         /// <summary>
-        /// Get device-to-monitor mappings
+        /// Saves current configuration to file
         /// </summary>
-        public Dictionary<string, string> GetDeviceToMonitorMap()
+        /// <returns>True if configuration was saved successfully, false otherwise</returns>
+        public bool SaveConfiguration()
         {
-            return new Dictionary<string, string>(_config.DeviceToMonitorMap);
+            try
+            {
+                MonTiltConfig config = new MonTiltConfig
+                {
+                    DeviceMonitorMap = DeviceMonitorMap,
+                    DevicePortMap = DevicePortMap
+                };
+
+                string json = JsonSerializer.Serialize(config, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                File.WriteAllText(CONFIG_FILE, json);
+                Console.WriteLine("Configuration saved successfully.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving configuration: {ex.Message}");
+                return false;
+            }
         }
-        
+
         /// <summary>
-        /// Set device-to-monitor mappings
+        /// Maps a device to a monitor
         /// </summary>
-        public void SetDeviceToMonitorMap(Dictionary<string, string> mappings)
+        /// <param name="macAddress">The MAC address of the device</param>
+        /// <param name="monitorIndex">The monitor index</param>
+        public void MapDeviceToMonitor(string macAddress, int monitorIndex)
         {
-            _config.DeviceToMonitorMap = new Dictionary<string, string>(mappings);
+            DeviceMonitorMap[macAddress] = monitorIndex;
+            ConfigurationUpdated?.Invoke(this, EventArgs.Empty);
         }
-        
+
         /// <summary>
-        /// Add or update a device-to-monitor mapping
+        /// Unmaps a device from its monitor
         /// </summary>
-        public void AddOrUpdateMapping(string deviceMac, string monitorDeviceName)
+        /// <param name="macAddress">The MAC address of the device</param>
+        /// <returns>True if the device was unmapped, false if it wasn't mapped</returns>
+        public bool UnmapDevice(string macAddress)
         {
-            _config.DeviceToMonitorMap[deviceMac] = monitorDeviceName;
+            bool removed = DeviceMonitorMap.Remove(macAddress);
+            
+            if (removed)
+            {
+                ConfigurationUpdated?.Invoke(this, EventArgs.Empty);
+            }
+            
+            return removed;
         }
-        
+
         /// <summary>
-        /// Remove a device-to-monitor mapping
+        /// Updates the COM port for a device
         /// </summary>
-        public bool RemoveMapping(string deviceMac)
+        /// <param name="macAddress">The MAC address of the device</param>
+        /// <param name="comPort">The COM port</param>
+        public void UpdateDevicePort(string macAddress, string comPort)
         {
-            return _config.DeviceToMonitorMap.Remove(deviceMac);
+            DevicePortMap[macAddress] = comPort;
+            ConfigurationUpdated?.Invoke(this, EventArgs.Empty);
         }
-        
+
         /// <summary>
-        /// Update device COM port
+        /// Creates default configuration
         /// </summary>
-        public void UpdateDevicePort(string deviceMac, string comPort)
+        private void CreateDefaultConfiguration()
         {
-            _config.DeviceToPortMap[deviceMac] = comPort;
+            DeviceMonitorMap = new Dictionary<string, int>();
+            DevicePortMap = new Dictionary<string, string>();
         }
-        
+
         /// <summary>
-        /// Get device COM port
+        /// Configuration class for serialization
         /// </summary>
-        public string GetDevicePort(string deviceMac)
+        private class MonTiltConfig
         {
-            return _config.DeviceToPortMap.TryGetValue(deviceMac, out string port) ? port : null;
-        }
-        
-        /// <summary>
-        /// Configuration data class
-        /// </summary>
-        private class ConfigData
-        {
-            public Dictionary<string, string> DeviceToMonitorMap { get; set; } = new Dictionary<string, string>();
-            public Dictionary<string, string> DeviceToPortMap { get; set; } = new Dictionary<string, string>();
+            [JsonPropertyName("deviceMonitorMap")]
+            public Dictionary<string, int>? DeviceMonitorMap { get; set; }
+
+            [JsonPropertyName("devicePortMap")]
+            public Dictionary<string, string>? DevicePortMap { get; set; }
         }
     }
 }
