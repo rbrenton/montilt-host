@@ -370,31 +370,21 @@ namespace MonTilt.Driver
                 DEVMODE dm = new DEVMODE();
                 d.cb = Marshal.SizeOf(d);
 
+                d.DeviceName = monitor.DeviceName;
+
                 if (0 != NativeMethods.EnumDisplaySettings(
                     d.DeviceName, NativeMethods.ENUM_CURRENT_SETTINGS, ref dm))
                 {
-                    int temp = dm.dmPelsHeight;
-                    dm.dmPelsHeight = dm.dmPelsWidth;
-                    dm.dmPelsWidth = temp;
+                    int origHeight = dm.dmPelsHeight;
+                    int origWidth = dm.dmPelsWidth;
 
-                    switch (dm.dmDisplayOrientation)
-                    {
-                        case NativeMethods.DMDO_DEFAULT:
-                            dm.dmDisplayOrientation = NativeMethods.DMDO_270;
-                            break;
-                        case NativeMethods.DMDO_270:
-                            dm.dmDisplayOrientation = NativeMethods.DMDO_180;
-                            break;
-                        case NativeMethods.DMDO_180:
-                            dm.dmDisplayOrientation = NativeMethods.DMDO_90;
-                            break;
-                        case NativeMethods.DMDO_90:
-                            dm.dmDisplayOrientation = NativeMethods.DMDO_DEFAULT;
-                            break;
-                        default:
-                            break;
+                    // Swap width and height if going between landscape and portrait
+                    if ((dm.dmDisplayOrientation % 2 == 1) ^ (orientation % 2 == 1)) {
+                        dm.dmPelsHeight = origWidth;
+                        dm.dmPelsWidth = origHeight;
                     }
 
+                    dm.dmDisplayOrientation = orientation;
                     DISP_CHANGE iRet = NativeMethods.ChangeDisplaySettingsEx(
                         d.DeviceName, ref dm, IntPtr.Zero,
                         DisplaySettingsFlags.CDS_UPDATEREGISTRY, IntPtr.Zero);
